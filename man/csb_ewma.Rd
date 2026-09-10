@@ -10,9 +10,11 @@ csb_ewma(
   L,
   p0 = 0.5,
   max_time = NULL,
+  stop_at_signal = TRUE,
+  distribution = NULL,
   posthoc_method = "BH",
   alpha = 0.05,
-  verbose = TRUE
+  verbose = FALSE
 )
 }
 \arguments{
@@ -22,30 +24,63 @@ csb_ewma(
 
 \item{L}{Control limit multiplier}
 
-\item{p0}{In-control proportion(s). Either a single number (same for all streams)
-or a numeric vector of length equal to number of rows in data.}
+\item{p0}{In-control proportion (default = 0.5)}
 
 \item{max_time}{Maximum time points to monitor (default = NULL uses all)}
+
+\item{stop_at_signal}{Logical. If TRUE (default), monitoring stops at the
+first signal and post-hoc identification is performed once, stored in
+\code{flagged} (backward compatible with every released version through
+1.1.0). If FALSE, monitoring continues through \code{max_time} and
+post-hoc identification is performed separately at each signal in
+\code{signal_times}, stored as a named list in \code{flagged_by_signal}
+(names are the signal times as character strings); \code{flagged} is
+then set to the first signal's result for convenience.}
+
+\item{distribution}{If data is continuous, specify distribution}
 
 \item{posthoc_method}{Method for post-hoc identification (default = "BH")}
 
 \item{alpha}{Significance level for post-hoc (default = 0.05)}
 
-\item{verbose}{If TRUE, print informational messages (default = TRUE)}
+\item{verbose}{Logical. If TRUE, prints informational messages about whether the input data required dichotomization. Default FALSE (silent).}
 }
 \value{
-A list of class "csb_ewma" containing chart results and flagged streams
+A list of class "csb_ewma" containing chart results and flagged
+streams. When \code{stop_at_signal = FALSE}, also contains
+\code{signal_times} (every time point at which a signal was detected)
+and \code{flagged_by_signal} (post-hoc identification results at each
+of those times).
 }
 \description{
 Runs the Cumulative Standardized Binomial EWMA control chart on multiple stream data.
 }
+\details{
+By default (\code{stop_at_signal = TRUE}), monitoring stops at the first
+signal and post-hoc identification is performed once, matching the
+behavior of every released version of this function through 1.1.0.
+Setting \code{stop_at_signal = FALSE} instead continues monitoring
+through \code{max_time} and performs post-hoc identification separately
+at every signal recorded in \code{signal_times}, using only the data
+observed up to and including that signal. See \code{\link{run_csb_ewma}}
+for the full explanation of continuation mode; it applies identically
+here since this function calls that one internally.
+}
 \examples{
-{
+\donttest{
 set.seed(123)
 bin_data <- matrix(rbinom(10*100, 1, 0.5), nrow = 10, ncol = 100)
 for(i in 1:3) bin_data[i, ] <- rbinom(100, 1, 0.8)
 result <- csb_ewma(bin_data, lambda = 0.175, L = 1.375)
-message(result)
+print(result)
 plot(result)
+
+# Continue monitoring past the first signal and see every signal time
+result2 <- csb_ewma(bin_data, lambda = 0.175, L = 1.375,
+                     stop_at_signal = FALSE)
+print(result2$signal_times)
 }
+}
+\seealso{
+\code{\link[=run_csb_ewma]{run_csb_ewma()}} for the lower-level engine this function calls, useful directly when a variance cache should be precomputed once and reused across many chart runs (for example, in simulation studies).
 }

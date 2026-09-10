@@ -4,7 +4,15 @@
 \alias{run_csb_ewma}
 \title{Run CSB-EWMA Chart on Binary Data}
 \usage{
-run_csb_ewma(bin_matrix, lambda, L, var_cache, max_time = NULL, p0 = 0.5)
+run_csb_ewma(
+  bin_matrix,
+  lambda,
+  L,
+  var_cache,
+  max_time = NULL,
+  p0 = 0.5,
+  stop_at_signal = TRUE
+)
 }
 \arguments{
 \item{bin_matrix}{A matrix of binary indicators (streams as rows, time as columns)}
@@ -17,11 +25,18 @@ run_csb_ewma(bin_matrix, lambda, L, var_cache, max_time = NULL, p0 = 0.5)
 
 \item{max_time}{Maximum time points to monitor (default = NULL uses all)}
 
-\item{p0}{In-control proportion(s). Either a single number (same for all streams) or a numeric vector of length equal to number of rows in bin_matrix.
-Example p0 = c(0.5, 0.6, 0.7)   # different p0 for stream1, stream2, stream3.}
+\item{p0}{In-control proportion (default = 0.5)}
+
+\item{stop_at_signal}{Logical. If TRUE (default), monitoring stops at the
+first signal, reproducing the behavior of every version through 1.1.0.
+If FALSE, monitoring continues through max_time and every signal time is
+recorded in signal_times.}
 }
 \value{
-A list of class "csb_ewma" containing chart results
+A list of class "csb_ewma" containing chart results. Includes
+signal_time and signal_detected (the first signal, kept for backward
+compatibility) and signal_times (an integer vector of every time point
+at which a signal was recorded; empty if none).
 }
 \description{
 This function implements the core CSB-EWMA monitoring algorithm exactly as
@@ -40,15 +55,35 @@ The algorithm works as follows:
 \item Update EWMA: r_t = lambda * W_t + (1 - lambda) * r_prev
 \item Get exact variance from precomputed cache: v_t = var_cache\link{t}
 \item Compute control limits: UCL_t = L * sqrt(v_t), LCL_t = -L * sqrt(v_t)
-\item If r_t > UCL_t or r_t < LCL_t, signal at time t and break
-\item Otherwise, update r_prev = r_t and continue
+\item If r_t > UCL_t or r_t < LCL_t, a signal is recorded at time t
+\item Update r_prev = r_t and continue, unless stop_at_signal ends monitoring here
 }
 }
+
+By default (\code{stop_at_signal = TRUE}), monitoring stops at the first
+signal, matching the behavior of every released version of this function
+through 1.1.0. Setting \code{stop_at_signal = FALSE} instead continues
+monitoring through \code{max_time}, recording every time point at which a
+signal condition is met in \code{signal_times}, without resetting the
+cumulative sum or the EWMA statistic after a signal; the formula above is
+unchanged, only the decision to stop early changes. This continuation mode
+is a practical convenience for real-time or dashboard-style monitoring
+where the process keeps running after an alarm; it is not itself a
+procedure described in the dissertation, which presents only the
+stop-at-first-signal convention.
 }
 \examples{
 bin_matrix <- matrix(rbinom(10*200, 1, 0.5), nrow = 10, ncol = 200)
 for(i in 1:3) bin_matrix[i, ] <- rbinom(100, 1, 0.8)
 var_cache <- precompute_variance(0.175, max_t = 200)
 result <- run_csb_ewma(bin_matrix, lambda = 0.175, L = 1.375, var_cache)
-message(paste("Signal at time:", result$signal_time))
+print(paste("Signal at time:", result$signal_time))
+
+# Continue monitoring past the first signal
+result2 <- run_csb_ewma(bin_matrix, lambda = 0.175, L = 1.375, var_cache,
+                         stop_at_signal = FALSE)
+print(result2$signal_times)
+}
+\seealso{
+\code{\link[=csb_ewma]{csb_ewma()}} for the higher-level convenience wrapper that dichotomizes continuous data, precomputes variance, calls this function, and performs post-hoc identification automatically.
 }

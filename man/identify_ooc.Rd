@@ -2,10 +2,9 @@
 % Please edit documentation in R/posthoc.R
 \name{identify_ooc}
 \alias{identify_ooc}
-\title{Identify out-of-control streams
-Main function for post-hoc identification using multiple testing corrections.}
+\title{Identify out-of-control streams}
 \usage{
-identify_ooc(bin_matrix, alpha = 0.05, method = "BH", p0 = 0.5, verbose = TRUE)
+identify_ooc(bin_matrix, alpha = 0.05, method = "BH", p0 = 0.5)
 }
 \arguments{
 \item{bin_matrix}{Matrix of binary indicators (streams as rows, time as columns)}
@@ -14,21 +13,18 @@ identify_ooc(bin_matrix, alpha = 0.05, method = "BH", p0 = 0.5, verbose = TRUE)
 
 \item{method}{Correction method (default = "BH")}
 
-\item{p0}{In-control proportion(s). Either a single number or a vector of length = nrow(bin_matrix)}
-
-\item{verbose}{If TRUE, print informational messages (default = TRUE)}
+\item{p0}{In-control proportion (default = 0.5)}
 }
 \value{
 Data frame with p-values and flags for each stream
 }
 \description{
-Identify out-of-control streams
 Main function for post-hoc identification using multiple testing corrections.
 }
 \examples{
 set.seed(123)
 bin_mat <- matrix(rbinom(10*100, 1, 0.5), nrow = 10, ncol = 100)
 for(i in 1:3) bin_mat[i, ] <- rbinom(100, 1, 0.8)
-result <- identify_ooc(bin_mat, p0 = 0.5)
+result <- identify_ooc(bin_mat)
 print(result[result$flagged, ])
 }

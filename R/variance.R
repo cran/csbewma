@@ -35,7 +35,13 @@ var_rt_exact_single <- function(lambda, t) {
   
   # First term: double summation over j = 1 to t-1 and i = j+1 to t
   # This accounts for the covariance between different time points (i != j)
-  for (j in 1:(t-1)) {
+  # NOTE (fix): seq_len(t-1) is used instead of 1:(t-1). When t = 1, seq_len(0)
+  # correctly returns an empty sequence, so this loop contributes nothing, as
+  # required (there are no j < i pairs when t = 1). The previous form, 1:(t-1),
+  # evaluated to 1:0 when t = 1, which R treats as the descending sequence
+  # c(1, 0) rather than an empty range, silently adding two spurious terms to
+  # S and inflating Var(r_1) well above its correct value of lambda^2.
+  for (j in seq_len(t - 1)) {
     
     # Compute exponential weights for all i > j
     # The exponent is (2t - i - j) as in Equation (19)

@@ -20,7 +20,7 @@ A numeric vector of length n containing Laplace random variables
 Generates random numbers from the Laplace distribution using inverse transform sampling.
 }
 \examples{
-{
+\dontrun{
 x <- rlaplace(100, location = 0, scale = 1)
 }
 }

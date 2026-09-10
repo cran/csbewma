@@ -3,25 +3,23 @@
 #' Computes exact binomial p-values for each stream based on successes.
 #'
 #' @param bin_matrix Matrix of binary indicators (streams as rows, time as columns)
-#' @param p0 In-control proportion(s). Either a single number or a vector of length = nrow(bin_matrix)
+#' @param p0 In-control proportion (default = 0.5)
 #' @return Numeric vector of p-values
 #' @export
 #'
 #' @examples
 #' bin_mat <- matrix(rbinom(500, 1, 0.5), nrow = 10, ncol = 50)
-#' pvals <- calculate_pvalues(bin_mat, p0 = 0.5)
+#' pvals <- calculate_pvalues(bin_mat)
 calculate_pvalues <- function(bin_matrix, p0 = 0.5) {
   k <- nrow(bin_matrix)
   T_sig <- ncol(bin_matrix)
   successes <- rowSums(bin_matrix)
-  # Handle p0: single value or vector
-  if (length(p0) == 1) p0 <- rep(p0, k)
-  if (length(p0) != k) stop("p0 must be length 1 or length equal to number of streams")
   pvals <- sapply(1:k, function(i) {
-    1 - stats::pbinom(successes[i] - 1, size = T_sig, prob = p0[i])
+    1 - stats::pbinom(successes[i] - 1, size = T_sig, prob = p0)
   })
   return(pvals)
 }
+
 
 #' Apply multiple testing corrections
 #'
@@ -61,13 +59,13 @@ apply_multiple_testing <- function(pvals, method = "BH", alpha = 0.05) {
 
 
 #' Identify out-of-control streams
+#'
 #' Main function for post-hoc identification using multiple testing corrections.
 #'
 #' @param bin_matrix Matrix of binary indicators (streams as rows, time as columns)
 #' @param alpha Significance level (default = 0.05)
 #' @param method Correction method (default = "BH")
-#' @param p0 In-control proportion(s). Either a single number or a vector of length = nrow(bin_matrix)
-#' @param verbose If TRUE, print informational messages (default = TRUE)
+#' @param p0 In-control proportion (default = 0.5)
 #' @return Data frame with p-values and flags for each stream
 #' @export
 #'
@@ -75,9 +73,9 @@ apply_multiple_testing <- function(pvals, method = "BH", alpha = 0.05) {
 #' set.seed(123)
 #' bin_mat <- matrix(rbinom(10*100, 1, 0.5), nrow = 10, ncol = 100)
 #' for(i in 1:3) bin_mat[i, ] <- rbinom(100, 1, 0.8)
-#' result <- identify_ooc(bin_mat, p0 = 0.5)
+#' result <- identify_ooc(bin_mat)
 #' print(result[result$flagged, ])
-identify_ooc <- function(bin_matrix, alpha = 0.05, method = "BH", p0 = 0.5, verbose = TRUE) {
+identify_ooc <- function(bin_matrix, alpha = 0.05, method = "BH", p0 = 0.5) {
   if (!is.matrix(bin_matrix)) stop("bin_matrix must be a matrix")
   if (!method %in% c("BH", "bonferroni", "holm", "raw")) {
     stop("method must be one of: 'BH', 'bonferroni', 'holm', 'raw'")
@@ -108,7 +106,6 @@ identify_ooc <- function(bin_matrix, alpha = 0.05, method = "BH", p0 = 0.5, verb
 #' Creates a summary of which streams were flagged.
 #'
 #' @param flagged_results Output from identify_ooc()
-#' @param verbose If TRUE, print informational messages (default = TRUE)
 #' @return List with flagged streams and summary table
 #' @export
 #'
@@ -118,7 +115,7 @@ identify_ooc <- function(bin_matrix, alpha = 0.05, method = "BH", p0 = 0.5, verb
 #' result <- identify_ooc(bin_mat)
 #' summary <- flagged_streams_summary(result)
 #' print(summary$flagged_streams)
-flagged_streams_summary <- function(flagged_results, verbose = TRUE) {
+flagged_streams_summary <- function(flagged_results) {
   flagged_streams <- flagged_results$stream[flagged_results$flagged]
   total_flagged <- length(flagged_streams)
   if (total_flagged > 0) {
@@ -127,7 +124,7 @@ flagged_streams_summary <- function(flagged_results, verbose = TRUE) {
                                        "p_value", "adjusted_p_value")]
   } else {
     summary_table <- NULL
-    if (verbose) message("No streams were flagged as out-of-control")
+    message("No streams were flagged as out-of-control")
   }
   return(list(
     flagged_streams = flagged_streams,

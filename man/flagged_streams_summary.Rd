@@ -4,12 +4,10 @@
 \alias{flagged_streams_summary}
 \title{Summarize flagged streams}
 \usage{
-flagged_streams_summary(flagged_results, verbose = TRUE)
+flagged_streams_summary(flagged_results)
 }
 \arguments{
 \item{flagged_results}{Output from identify_ooc()}
-
-\item{verbose}{If TRUE, print informational messages (default = TRUE)}
 }
 \value{
 List with flagged streams and summary table

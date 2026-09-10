@@ -8,13 +8,14 @@
 #' @return A numeric vector of length n containing Laplace random variables
 #' @export
 #'
-#' @examples{
+#' @examples
+#' \dontrun{
 #' x <- rlaplace(100, location = 0, scale = 1)
 #' }
-# ----------------------------------------------------------------------------
 rlaplace <- function(n, location = 0, scale = 1) {
   u <- stats::runif(n, -0.5, 0.5)
-  location - scale * sign(u) * log(1 - 2 * abs(u))}
+  location - scale * sign(u) * log(1 - 2 * abs(u))
+}
 #' Generate Continuous Data from Specified Distribution
 #'
 #' Generates continuous observations from normal, Laplace, uniform, or exponential distributions

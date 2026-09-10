@@ -13,15 +13,15 @@ utils::globalVariables(c("r", "UCL", "LCL", "stream", "p_value", "color_status")
 #' # See csb_ewma() for examples
 plot.csb_ewma <- function(x, title = "CSB-EWMA Control Chart",
                           show_signal = TRUE, ...) {
-
+  
   # Check that x is a valid csb_ewma object
   if (!inherits(x, "csb_ewma")) {
     stop("Object must be of class 'csb_ewma'")
   }
-
+  
   # Extract data from the csb_ewma object
   t_values <- 1:x$T_sig
-
+  
   # Create data frame for ggplot
   plot_data <- data.frame(
     t = t_values,
@@ -29,28 +29,28 @@ plot.csb_ewma <- function(x, title = "CSB-EWMA Control Chart",
     UCL = x$UCL_history,
     LCL = x$LCL_history
   )
-
+  
   # Create the base ggplot object with explicit ggplot2:: prefix
   p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = t)) +
-
+    
     ggplot2::geom_line(ggplot2::aes(y = r, color = "EWMA Statistic"), linewidth = 1) +
     ggplot2::geom_line(ggplot2::aes(y = UCL, color = "UCL"), linetype = "dashed", linewidth = 0.8) +
     ggplot2::geom_line(ggplot2::aes(y = LCL, color = "LCL"), linetype = "dashed", linewidth = 0.8) +
     ggplot2::geom_hline(yintercept = 0, linetype = "dotted", color = "gray50", linewidth = 0.5) +
-
+    
     ggplot2::labs(
       title = title,
       x = "Time Point (t)",
       y = expression(r[t] ~ "(EWMA Statistic)"),
       color = "Series"
     ) +
-
+    
     ggplot2::scale_color_manual(
       values = c("EWMA Statistic" = "#1F7AB5",
                  "UCL" = "#D62828",
                  "LCL" = "#D62828")
     ) +
-
+    
     ggplot2::theme_minimal(base_size = 12) +
     ggplot2::theme(
       legend.position = "bottom",
@@ -64,31 +64,35 @@ plot.csb_ewma <- function(x, title = "CSB-EWMA Control Chart",
       panel.background = ggplot2::element_rect(fill = "white", color = NA),
       plot.background = ggplot2::element_rect(fill = "white", color = NA)
     )
-
+  
   # Add signal point annotation if a signal was detected
   if (show_signal && x$signal_detected) {
 
+    signal_times_to_plot <- if (!is.null(x$signal_times)) x$signal_times else x$signal_time
+
     signal_data <- data.frame(
-      t = x$signal_time,
-      r = x$r_history[x$signal_time]
+      t = signal_times_to_plot,
+      r = x$r_history[signal_times_to_plot]
     )
 
     p <- p + ggplot2::geom_point(data = signal_data, ggplot2::aes(x = t, y = r),
-                                 color = "#D62828", size = 4.5, shape = 18) +
+                                  color = "#D62828", size = 4.5, shape = 18) +
 
       ggplot2::annotate("text",
-                        x = x$signal_time,
-                        y = x$r_history[x$signal_time] + 0.15,
-                        label = paste("Signal at t =", x$signal_time),
-                        color = "#D62828",
-                        size = 3.5,
-                        fontface = "bold",
-                        hjust = 0)
+                         x = signal_times_to_plot,
+                         y = x$r_history[signal_times_to_plot] + 0.15,
+                         label = paste("Signal at t =", signal_times_to_plot),
+                         color = "#D62828",
+                         size = 3.5,
+                         fontface = "bold",
+                         hjust = 1)
   }
-
+  
   # Display the plot
-  return(p)
-
+  print(p)
+  
+  # Return the plot object invisibly
+  invisible(p)
 }
 
 
@@ -104,10 +108,10 @@ plot.csb_ewma <- function(x, title = "CSB-EWMA Control Chart",
 #' @export
 plot_csb_ewma_direct <- function(result, title = "CSB-EWMA Control Chart",
                                  show_signal = TRUE) {
-
+  
   # Extract data from the result object
   t_values <- 1:result$T_sig
-
+  
   # Create data frame for plotting
   plot_data <- data.frame(
     t = t_values,
@@ -115,28 +119,28 @@ plot_csb_ewma_direct <- function(result, title = "CSB-EWMA Control Chart",
     UCL = result$UCL_history,
     LCL = result$LCL_history
   )
-
+  
   # Create the base ggplot object with explicit ggplot2:: prefix
   p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = t)) +
-
+    
     ggplot2::geom_line(ggplot2::aes(y = r, color = "EWMA Statistic"), linewidth = 1) +
     ggplot2::geom_line(ggplot2::aes(y = UCL, color = "UCL"), linetype = "dashed", linewidth = 0.8) +
     ggplot2::geom_line(ggplot2::aes(y = LCL, color = "LCL"), linetype = "dashed", linewidth = 0.8) +
     ggplot2::geom_hline(yintercept = 0, linetype = "dotted", color = "gray50", linewidth = 0.5) +
-
+    
     ggplot2::labs(
       title = title,
       x = "Time Point (t)",
       y = expression(r[t] ~ "(EWMA Statistic)"),
       color = "Series"
     ) +
-
+    
     ggplot2::scale_color_manual(
       values = c("EWMA Statistic" = "#1F7AB5",
                  "UCL" = "#D62828",
                  "LCL" = "#D62828")
     ) +
-
+    
     ggplot2::theme_minimal(base_size = 12) +
     ggplot2::theme(
       legend.position = "bottom",
@@ -150,28 +154,32 @@ plot_csb_ewma_direct <- function(result, title = "CSB-EWMA Control Chart",
       panel.background = ggplot2::element_rect(fill = "white", color = NA),
       plot.background = ggplot2::element_rect(fill = "white", color = NA)
     )
-
+  
   # Add signal point if detected
   if (show_signal && result$signal_detected) {
 
-    p <- p + ggplot2::geom_point(data = data.frame(t = result$signal_time,
-                                                   r = result$r_history[result$signal_time]),
-                                 ggplot2::aes(x = t, y = r),
-                                 color = "#D62828", size = 4.5, shape = 18) +
+    signal_times_to_plot <- if (!is.null(result$signal_times)) result$signal_times else result$signal_time
+
+    p <- p + ggplot2::geom_point(data = data.frame(t = signal_times_to_plot,
+                                                     r = result$r_history[signal_times_to_plot]),
+                                  ggplot2::aes(x = t, y = r),
+                                  color = "#D62828", size = 4.5, shape = 18) +
 
       ggplot2::annotate("text",
-                        x = result$signal_time,
-                        y = result$r_history[result$signal_time] + 0.15,
-                        label = paste("Signal at t =", result$signal_time),
-                        color = "#D62828",
-                        size = 3.5,
-                        fontface = "bold",
-                        hjust = 0)
+                         x = signal_times_to_plot,
+                         y = result$r_history[signal_times_to_plot] + 0.15,
+                         label = paste("Signal at t =", signal_times_to_plot),
+                         color = "#D62828",
+                         size = 3.5,
+                         fontface = "bold",
+                         hjust = 1)
   }
-
+  
   # Display the plot
-  return(p)
-
+  print(p)
+  
+  # Return the plot object invisibly
+  invisible(p)
 }
 
 
@@ -187,24 +195,24 @@ plot_csb_ewma_direct <- function(result, title = "CSB-EWMA Control Chart",
 #' @export
 plot_flagged_streams <- function(flagged_results, alpha = 0.05,
                                  title = "Stream P-values") {
-
+  
   # Create a new column for bar colors based on flagged status
   flagged_results$color_status <- ifelse(flagged_results$flagged,
                                          "Flagged",
                                          "Not Flagged")
-
+  
   # Create the bar plot with explicit ggplot2:: prefix
   p <- ggplot2::ggplot(flagged_results, ggplot2::aes(x = factor(stream),
                                                      y = -log10(p_value),
                                                      fill = color_status)) +
-
+    
     ggplot2::geom_bar(stat = "identity", width = 0.7) +
-
+    
     ggplot2::geom_hline(yintercept = -log10(alpha),
                         linetype = "dashed",
                         color = "#D62828",
                         linewidth = 0.8) +
-
+    
     ggplot2::annotate("text",
                       x = nrow(flagged_results),
                       y = -log10(alpha) + 0.1,
@@ -212,17 +220,17 @@ plot_flagged_streams <- function(flagged_results, alpha = 0.05,
                       color = "#D62828",
                       size = 3,
                       hjust = 1) +
-
+    
     ggplot2::labs(
       title = title,
       x = "Stream Number",
       y = expression(-log[10](p-value)),
       fill = "Status"
     ) +
-
+    
     ggplot2::scale_fill_manual(values = c("Flagged" = "#D62828",
                                           "Not Flagged" = "#A9A9A9")) +
-
+    
     ggplot2::theme_minimal(base_size = 12) +
     ggplot2::theme(
       legend.position = "bottom",
@@ -235,9 +243,12 @@ plot_flagged_streams <- function(flagged_results, alpha = 0.05,
       panel.background = ggplot2::element_rect(fill = "white", color = NA),
       plot.background = ggplot2::element_rect(fill = "white", color = NA)
     )
-
+  
   # Display the plot
-  return(p)
+  print(p)
+  
+  # Return the plot object invisibly
+  invisible(p)
 }
 
 
@@ -253,27 +264,30 @@ plot_flagged_streams <- function(flagged_results, alpha = 0.05,
 #' @export
 plot_chart_with_flagged <- function(chart_result, flagged_results,
                                     layout = "side") {
-
+  
   # Create the control chart plot
   p1 <- plot_csb_ewma_direct(chart_result, show_signal = TRUE)
-
+  
   # Create the flagged streams bar plot
   p2 <- plot_flagged_streams(flagged_results, alpha = 0.05)
-
+  
   # Combine plots based on layout choice using patchwork
   if (layout == "side") {
     combined_plot <- p1 + p2 + patchwork::plot_layout(ncol = 2, widths = c(1, 0.8))
   } else {
     combined_plot <- p1 / p2 + patchwork::plot_layout(nrow = 2, heights = c(1, 0.8))
   }
-
+  
   # Add a common title
   combined_plot <- combined_plot +
     patchwork::plot_annotation(
       title = "CSB-EWMA Diagnostic Dashboard",
       theme = ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5, face = "bold", size = 16))
     )
-
+  
   # Display the combined plot
-  return(combined_plot)
+  print(combined_plot)
+  
+  # Return invisibly
+  invisible(combined_plot)
 }
