@@ -11,7 +11,11 @@ dichotomize_data(data, distribution, p0 = 0.5)
 
 \item{distribution}{Character string specifying the distribution type}
 
-\item{p0}{In-control proportion (default = 0.5)}
+\item{p0}{In-control proportion (default = 0.5). May instead be a numeric
+vector the same length as data, giving a separate in-control
+proportion (and therefore threshold) for each observation; this is
+used, for example, to dichotomize one time slice across k streams that
+do not all share the same in-control proportion.}
 }
 \value{
 Integer vector of binary indicators (0 or 1)
@@ -23,4 +27,9 @@ observation exceeds the in-control median or specified quantile.
 \examples{
 x <- rnorm(100)
 binary <- dichotomize_data(x, distribution = "normal", p0 = 0.5)
+
+# Per-observation (e.g. per-stream) in-control proportions
+x2 <- rnorm(5)
+binary2 <- dichotomize_data(x2, distribution = "normal",
+                             p0 = c(0.5, 0.5, 0.4, 0.6, 0.5))
 }

@@ -127,19 +127,39 @@ generate_continuous_data <- function(distribution, n, shift = 0, p0 = 0.5) {
 #'
 #' @param data Numeric vector of continuous observations
 #' @param distribution Character string specifying the distribution type
-#' @param p0 In-control proportion (default = 0.5)
+#' @param p0 In-control proportion (default = 0.5). May instead be a numeric
+#'   vector the same length as data, giving a separate in-control
+#'   proportion (and therefore threshold) for each observation; this is
+#'   used, for example, to dichotomize one time slice across k streams that
+#'   do not all share the same in-control proportion.
 #' @return Integer vector of binary indicators (0 or 1)
 #' @export
 #'
 #' @examples
 #' x <- rnorm(100)
 #' binary <- dichotomize_data(x, distribution = "normal", p0 = 0.5)
+#'
+#' # Per-observation (e.g. per-stream) in-control proportions
+#' x2 <- rnorm(5)
+#' binary2 <- dichotomize_data(x2, distribution = "normal",
+#'                              p0 = c(0.5, 0.5, 0.4, 0.6, 0.5))
 # ----------------------------------------------------------------------------
 dichotomize_data <- function(data, distribution, p0 = 0.5) {
 
   # ========================================================================
   # STEP 1: Compute the threshold based on distribution type
   # ========================================================================
+
+  # p0 may be a single in-control proportion applied to every observation,
+  # or a numeric vector the same length as data giving a separate in-control
+  # proportion per observation (for example, one value per stream when data
+  # is a single time slice across streams). All branches below are written
+  # with vectorized R functions (qnorm/qexp/ifelse) so a vector p0 produces
+  # a vector of per-observation thresholds th, and a scalar p0 reproduces
+  # the original single-threshold behavior exactly.
+  if (!(length(p0) == 1 || length(p0) == length(data))) {
+    stop("p0 must be a single value or a vector the same length as data")
+  }
 
   if (distribution == "normal") {
     # For normal distribution, use qnorm() to get the p0-th quantile
@@ -148,12 +168,8 @@ dichotomize_data <- function(data, distribution, p0 = 0.5) {
   }
   else if (distribution == "laplace") {
     # For Laplace distribution with location = 0, scale = 1
-    # The p0-th quantile is given by:
-    if (p0 < 0.5) {
-      th <- log(2 * p0)
-    } else {
-      th <- -log(2 * (1 - p0))
-    }
+    # The p0-th quantile is given by (vectorized over p0):
+    th <- ifelse(p0 < 0.5, log(2 * p0), -log(2 * (1 - p0)))
   }
   else if (distribution == "uniform") {
     # For Uniform[0,1], the p0-th quantile is simply p0

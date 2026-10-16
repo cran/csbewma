@@ -1,7 +1,7 @@
 Package: csbewma
 Title: Cumulative Standardized Binomial EWMA for Multiple Stream
         Processes
-Version: 1.1.0
+Version: 1.2.0
 Authors@R: c(
     person("Faruk", "Muritala", email = "fmurital@students.kennesaw.edu", role = c("aut", "cre")),
     person("Austin", "Brown", role = "aut"),
@@ -24,6 +24,6 @@ Suggests: testthat (>= 3.0.0)
 Config/roxygen2/version: 8.1.0
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2026-09-10 00:30:30 UTC; fmurital
+Packaged: 2026-10-16 03:56:41 UTC; fmurital
 Repository: CRAN
-Date/Publication: 2026-09-10 03:30:02 UTC
+Date/Publication: 2026-10-16 13:30:09 UTC

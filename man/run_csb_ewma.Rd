@@ -25,7 +25,11 @@ run_csb_ewma(
 
 \item{max_time}{Maximum time points to monitor (default = NULL uses all)}
 
-\item{p0}{In-control proportion (default = 0.5)}
+\item{p0}{In-control proportion (default = 0.5). May instead be a numeric
+vector of length k (one value per stream/row of bin_matrix) to allow
+each stream to have its own in-control proportion; mu0 and sigma2_0 are
+then computed as sum(p0) and sum(p0 * (1 - p0)) across streams, which
+reduces exactly to the scalar formulas when p0 has length 1.}
 
 \item{stop_at_signal}{Logical. If TRUE (default), monitoring stops at the
 first signal, reproducing the behavior of every version through 1.1.0.
@@ -83,6 +87,12 @@ print(paste("Signal at time:", result$signal_time))
 result2 <- run_csb_ewma(bin_matrix, lambda = 0.175, L = 1.375, var_cache,
                          stop_at_signal = FALSE)
 print(result2$signal_times)
+
+# Heterogeneous streams: one in-control proportion per stream
+p0_vec <- c(0.5, 0.5, 0.5, 0.4, 0.6, 0.5, 0.5, 0.5, 0.5, 0.5)
+result3 <- run_csb_ewma(bin_matrix, lambda = 0.175, L = 1.375, var_cache,
+                         p0 = p0_vec)
+print(paste("Signal at time:", result3$signal_time))
 }
 \seealso{
 \code{\link[=csb_ewma]{csb_ewma()}} for the higher-level convenience wrapper that dichotomizes continuous data, precomputes variance, calls this function, and performs post-hoc identification automatically.

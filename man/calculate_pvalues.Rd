@@ -9,7 +9,9 @@ calculate_pvalues(bin_matrix, p0 = 0.5)
 \arguments{
 \item{bin_matrix}{Matrix of binary indicators (streams as rows, time as columns)}
 
-\item{p0}{In-control proportion (default = 0.5)}
+\item{p0}{In-control proportion (default = 0.5). May instead be a numeric
+vector of length k (one value per stream/row of bin_matrix) so each
+stream is tested against its own in-control proportion.}
 }
 \value{
 Numeric vector of p-values
@@ -20,4 +22,8 @@ Computes exact binomial p-values for each stream based on successes.
 \examples{
 bin_mat <- matrix(rbinom(500, 1, 0.5), nrow = 10, ncol = 50)
 pvals <- calculate_pvalues(bin_mat)
+
+# One in-control proportion per stream
+p0_vec <- c(0.5, 0.5, 0.4, 0.5, 0.6, 0.5, 0.5, 0.5, 0.5, 0.5)
+pvals2 <- calculate_pvalues(bin_mat, p0 = p0_vec)
 }

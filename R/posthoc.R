@@ -3,19 +3,29 @@
 #' Computes exact binomial p-values for each stream based on successes.
 #'
 #' @param bin_matrix Matrix of binary indicators (streams as rows, time as columns)
-#' @param p0 In-control proportion (default = 0.5)
+#' @param p0 In-control proportion (default = 0.5). May instead be a numeric
+#'   vector of length k (one value per stream/row of bin_matrix) so each
+#'   stream is tested against its own in-control proportion.
 #' @return Numeric vector of p-values
 #' @export
 #'
 #' @examples
 #' bin_mat <- matrix(rbinom(500, 1, 0.5), nrow = 10, ncol = 50)
 #' pvals <- calculate_pvalues(bin_mat)
+#'
+#' # One in-control proportion per stream
+#' p0_vec <- c(0.5, 0.5, 0.4, 0.5, 0.6, 0.5, 0.5, 0.5, 0.5, 0.5)
+#' pvals2 <- calculate_pvalues(bin_mat, p0 = p0_vec)
 calculate_pvalues <- function(bin_matrix, p0 = 0.5) {
   k <- nrow(bin_matrix)
   T_sig <- ncol(bin_matrix)
+  if (!(length(p0) == 1 || length(p0) == k)) {
+    stop("p0 must be a single value or a vector of length k (nrow(bin_matrix))")
+  }
+  p0_vec <- rep(p0, length.out = k)
   successes <- rowSums(bin_matrix)
   pvals <- sapply(1:k, function(i) {
-    1 - stats::pbinom(successes[i] - 1, size = T_sig, prob = p0)
+    1 - stats::pbinom(successes[i] - 1, size = T_sig, prob = p0_vec[i])
   })
   return(pvals)
 }
@@ -65,7 +75,9 @@ apply_multiple_testing <- function(pvals, method = "BH", alpha = 0.05) {
 #' @param bin_matrix Matrix of binary indicators (streams as rows, time as columns)
 #' @param alpha Significance level (default = 0.05)
 #' @param method Correction method (default = "BH")
-#' @param p0 In-control proportion (default = 0.5)
+#' @param p0 In-control proportion (default = 0.5). May instead be a numeric
+#'   vector of length k (one value per stream); forwarded as-is to
+#'   \code{\link{calculate_pvalues}}.
 #' @return Data frame with p-values and flags for each stream
 #' @export
 #'

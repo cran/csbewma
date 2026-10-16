@@ -37,7 +37,11 @@
 #' @param L Control limit multiplier
 #' @param var_cache Precomputed variance vector from precompute_variance()
 #' @param max_time Maximum time points to monitor (default = NULL uses all)
-#' @param p0 In-control proportion (default = 0.5)
+#' @param p0 In-control proportion (default = 0.5). May instead be a numeric
+#'   vector of length k (one value per stream/row of bin_matrix) to allow
+#'   each stream to have its own in-control proportion; mu0 and sigma2_0 are
+#'   then computed as sum(p0) and sum(p0 * (1 - p0)) across streams, which
+#'   reduces exactly to the scalar formulas when p0 has length 1.
 #' @param stop_at_signal Logical. If TRUE (default), monitoring stops at the
 #'   first signal, reproducing the behavior of every version through 1.1.0.
 #'   If FALSE, monitoring continues through max_time and every signal time is
@@ -60,6 +64,12 @@
 #' result2 <- run_csb_ewma(bin_matrix, lambda = 0.175, L = 1.375, var_cache,
 #'                          stop_at_signal = FALSE)
 #' print(result2$signal_times)
+#'
+#' # Heterogeneous streams: one in-control proportion per stream
+#' p0_vec <- c(0.5, 0.5, 0.5, 0.4, 0.6, 0.5, 0.5, 0.5, 0.5, 0.5)
+#' result3 <- run_csb_ewma(bin_matrix, lambda = 0.175, L = 1.375, var_cache,
+#'                          p0 = p0_vec)
+#' print(paste("Signal at time:", result3$signal_time))
 # ----------------------------------------------------------------------------
 run_csb_ewma <- function(bin_matrix, lambda, L, var_cache,
                          max_time = NULL, p0 = 0.5, stop_at_signal = TRUE) {
@@ -108,12 +118,29 @@ run_csb_ewma <- function(bin_matrix, lambda, L, var_cache,
     stop("var_cache length is less than max_time")
   }
 
-  # Compute derived parameters
-  # mu0 = expected value of sum at each time point = k * p0
-  mu0 <- k * p0
+  # Compute derived parameters.
+  # p0 may be a single in-control proportion shared by every stream (the
+  # original, scalar behavior), or a numeric vector of length k giving a
+  # separate in-control proportion for each stream (row of bin_matrix).
+  # A scalar p0 is recycled to length k before summing, which reproduces
+  # the original k * p0 / k * p0 * (1 - p0) formulas exactly. This makes
+  # the vector case a strict, backward-compatible generalization:
+  #   mu0     = sum(p0_i)
+  #   sigma2_0 = sum(p0_i * (1 - p0_i))
+  # which reduce to k*p0 and k*p0*(1-p0) when every p0_i equals p0.
+  if (!(length(p0) == 1 || length(p0) == k)) {
+    stop("p0 must be a single value or a vector of length k (nrow(bin_matrix))")
+  }
+  if (any(p0 <= 0 | p0 >= 1)) {
+    stop("p0 must be strictly between 0 and 1")
+  }
+  p0_vec <- rep(p0, length.out = k)
 
-  # sigma2_0 = variance of sum at each time point = k * p0 * (1 - p0)
-  sigma2_0 <- k * p0 * (1 - p0)
+  # mu0 = expected value of sum at each time point = sum(p0_i)
+  mu0 <- sum(p0_vec)
+
+  # sigma2_0 = variance of sum at each time point = sum(p0_i * (1 - p0_i))
+  sigma2_0 <- sum(p0_vec * (1 - p0_vec))
 
   # Initialize variables (exactly as in original simulation code)
   cum_sum <- 0            # Cumulative sum of C_t across time
@@ -245,7 +272,10 @@ run_csb_ewma <- function(bin_matrix, lambda, L, var_cache,
 #' @param data A matrix of binary indicators (0/1) with streams as rows and time as columns
 #' @param lambda Smoothing parameter for EWMA (0 < lambda <= 1)
 #' @param L Control limit multiplier
-#' @param p0 In-control proportion (default = 0.5)
+#' @param p0 In-control proportion (default = 0.5). May instead be a numeric
+#'   vector of length k (one value per stream), passed through to
+#'   \code{\link{run_csb_ewma}} and to the post-hoc identification step;
+#'   see that function's documentation for the exact generalization used.
 #' @param max_time Maximum time points to monitor (default = NULL uses all)
 #' @param stop_at_signal Logical. If TRUE (default), monitoring stops at the
 #'   first signal and post-hoc identification is performed once, stored in

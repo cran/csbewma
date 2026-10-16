@@ -24,7 +24,10 @@ csb_ewma(
 
 \item{L}{Control limit multiplier}
 
-\item{p0}{In-control proportion (default = 0.5)}
+\item{p0}{In-control proportion (default = 0.5). May instead be a numeric
+vector of length k (one value per stream), passed through to
+\code{\link{run_csb_ewma}} and to the post-hoc identification step;
+see that function's documentation for the exact generalization used.}
 
 \item{max_time}{Maximum time points to monitor (default = NULL uses all)}
 

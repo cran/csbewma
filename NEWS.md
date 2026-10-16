@@ -1,3 +1,37 @@
+# csbewma 1.2.0
+
+## New features
+
+* `p0` (the in-control proportion) can now be a numeric vector of length
+  `k` (one value per stream) instead of a single shared value, in
+  `run_csb_ewma()`, `csb_ewma()`, `calculate_pvalues()`, `identify_ooc()`,
+  and `dichotomize_data()`. This supports monitoring multiple streams that
+  do not all share the same in-control proportion (for example, several
+  water-quality variables whose historical out-of-band rates differ).
+  * In `run_csb_ewma()`/`csb_ewma()`, the chart's mean and variance become
+    `mu0 = sum(p0)` and `sigma2_0 = sum(p0 * (1 - p0))` across streams. A
+    scalar `p0` is recycled to length `k` before summing, which reproduces
+    the previous `k * p0` / `k * p0 * (1 - p0)` formulas exactly, so this
+    is a strict, backward-compatible generalization: every existing call
+    with a scalar `p0` returns bit-identical results.
+  * In `calculate_pvalues()`/`identify_ooc()`, each stream's exact binomial
+    p-value is computed against its own `p0[i]` instead of one shared
+    value, again falling back to the original single-value behavior when
+    `p0` has length 1.
+  * In `dichotomize_data()`, the in-control threshold `th` becomes a vector
+    the same length as `data` when `p0` is a vector, so a single call can
+    dichotomize one time slice across streams with different in-control
+    proportions. The Laplace branch was rewritten with `ifelse()` so it
+    vectorizes correctly over a vector `p0` (it previously used a scalar
+    `if`/`else`, which is only valid for a single value).
+  * The exact time-varying variance formula (`var_rt_exact_single()` /
+    `precompute_variance()`, Theorem 2 of the derivations paper) is
+    unchanged: it depends only on `lambda` and `t`, never on `p0` or `k`,
+    so it already applies to the vector-`p0` case with no modification.
+  * All four functions now validate that a vector `p0` has the expected
+    length (`k` for the chart/post-hoc functions, `length(data)` for
+    `dichotomize_data()`) and error clearly otherwise.
+
 # csbewma 1.1.0
 
 ## New features

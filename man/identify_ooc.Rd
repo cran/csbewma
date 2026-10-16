@@ -13,7 +13,9 @@ identify_ooc(bin_matrix, alpha = 0.05, method = "BH", p0 = 0.5)
 
 \item{method}{Correction method (default = "BH")}
 
-\item{p0}{In-control proportion (default = 0.5)}
+\item{p0}{In-control proportion (default = 0.5). May instead be a numeric
+vector of length k (one value per stream); forwarded as-is to
+\code{\link{calculate_pvalues}}.}
 }
 \value{
 Data frame with p-values and flags for each stream
